@@ -85,7 +85,7 @@ app.post('/reset/:id', (req, res) => {
   });
 });
 
-// Iniciar el servidor
+// Iniciar el servidor.
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
