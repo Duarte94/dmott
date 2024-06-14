@@ -1,7 +1,7 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,19 +17,23 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     duration INTEGER NOT NULL,
-    endTime INTEGER
+    endTime INTEGER DEFAULT 0
   )`);
 
-  // Insertar datos iniciales
-  db.run(`INSERT INTO timers (name, duration) VALUES ('Timer 1', 7200000)`); // 2 horas en milisegundos
-  db.run(`INSERT INTO timers (name, duration) VALUES ('Timer 2', 3600000)`); // 1 hora en milisegundos
+  // Insertar datos iniciales (temporizadores de 2 horas y 1 hora)
+  db.run(`INSERT OR IGNORE INTO timers (id, name, duration, endTime) VALUES 
+    (1, 'Temporizador 2 horas', 7200000, 0),
+    (2, 'Temporizador 1 hora', 3600000, 0)`);
 });
 
-// Ruta para iniciar el temporizador
+// Ruta para iniciar el temporizador por ID
 app.post('/start-timer/:id', (req, res) => {
   const { id } = req.params;
 
-  db.get(`SELECT * FROM timers WHERE id = ?`, [id], (err, row) => {
+  const query = `UPDATE timers SET endTime = ? WHERE id = ?`;
+  const durationQuery = `SELECT duration FROM timers WHERE id = ?`;
+
+  db.get(durationQuery, [id], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -38,48 +42,40 @@ app.post('/start-timer/:id', (req, res) => {
       return res.status(404).json({ error: 'Timer not found' });
     }
 
-    const endTime = Date.now() + row.duration;
+    const duration = row.duration;
+    const endTime = Date.now() + duration;
 
-    db.run(`UPDATE timers SET endTime = ? WHERE id = ?`, [endTime, id], function(err) {
+    db.run(query, [endTime, id], function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-
-      res.json({
-        id: id,
-        name: row.name,
-        endTime: endTime
-      });
+      res.json({ id, endTime });
     });
   });
 });
 
-// Ruta para obtener el estado del temporizador
+// Ruta para obtener el estado del temporizador por ID
 app.get('/get-timer/:id', (req, res) => {
   const { id } = req.params;
 
-  db.get(`SELECT endTime FROM timers WHERE id = ?`, [id], (err, row) => {
+  const query = `SELECT endTime FROM timers WHERE id = ?`;
+  db.get(query, [id], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    
-    if (!row) {
-      return res.status(404).json({ error: 'Timer not found' });
-    }
-
-    res.json(row);
+    res.json(row || { endTime: 0 }); // Si no hay resultados, retorna endTime = 0
   });
 });
 
-// Ruta para detener el temporizador
+// Ruta para detener el temporizador por ID
 app.post('/stop-timer/:id', (req, res) => {
   const { id } = req.params;
 
-  db.run(`UPDATE timers SET endTime = NULL WHERE id = ?`, [id], function(err) {
+  const query = `UPDATE timers SET endTime = 0 WHERE id = ?`;
+  db.run(query, [id], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-
     res.json({ id });
   });
 });

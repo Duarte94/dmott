@@ -4,24 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Temporizadores</title>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Temporizadores</h1>
-    <div class="timer">
-      <h2>Temporizador 1 (2 horas)</h2>
-      <p id="timer1">Tiempo restante: </p>
-      <button onclick="startTimer(1)">Iniciar</button>
-      <button onclick="stopTimer(1)">Detener</button>
-    </div>
-    <div class="timer">
-      <h2>Temporizador 2 (1 hora)</h2>
-      <p id="timer2">Tiempo restante: </p>
-      <button onclick="startTimer(2)">Iniciar</button>
-      <button onclick="stopTimer(2)">Detener</button>
-    </div>
+  <div>
+    <h2>Temporizador 1 (2 horas)</h2>
+    <p id="timer1">Temporizador no iniciado.</p>
+    <button id="startTimer1">Iniciar Temporizador</button>
+    <button id="stopTimer1">Detener Temporizador</button>
   </div>
+  <div>
+    <h2>Temporizador 2 (1 hora)</h2>
+    <p id="timer2">Temporizador no iniciado.</p>
+    <button id="startTimer2">Iniciar Temporizador</button>
+    <button id="stopTimer2">Detener Temporizador</button>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
