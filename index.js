@@ -1,5 +1,6 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
 const path = require('path');
 
 const app = express();
@@ -8,6 +9,7 @@ const dbPath = path.join(__dirname, 'db', 'mydatabase.db');
 const db = new sqlite3.Database(dbPath);
 
 app.use(express.json());
+app.use(cors());
 
 // Configurar la tabla de contadores
 db.serialize(() => {
@@ -85,7 +87,7 @@ app.post('/reset/:id', (req, res) => {
   });
 });
 
-// Iniciar el servidor.
+// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
