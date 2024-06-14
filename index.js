@@ -11,42 +11,36 @@ const db = new sqlite3.Database(dbPath);
 app.use(express.json());
 app.use(cors());
 
-// Configurar la tabla de contadores
+// Configurar la tabla de temporizadores
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS counters (
+  db.run(`CREATE TABLE IF NOT EXISTS timers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    count INTEGER DEFAULT 0
+    duration INTEGER NOT NULL,
+    endTime INTEGER
   )`);
 
   // Insertar datos iniciales
-  db.run(`INSERT INTO counters (name, count) VALUES ('My Counter', 0)`);
+  db.run(`INSERT INTO timers (name, duration) VALUES ('Timer 1', 7200000)`); // 2 horas en milisegundos
+  db.run(`INSERT INTO timers (name, duration) VALUES ('Timer 2', 3600000)`); // 1 hora en milisegundos
 });
 
-// Ruta para obtener todos los contadores
-app.get('/counters', (req, res) => {
-  db.all(`SELECT * FROM counters`, (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(rows);
-  });
-});
-
-// Ruta para incrementar el contador por ID
-app.post('/increment/:id', (req, res) => {
+// Ruta para iniciar el temporizador
+app.post('/start-timer/:id', (req, res) => {
   const { id } = req.params;
 
-  db.get(`SELECT * FROM counters WHERE id = ?`, [id], (err, row) => {
+  db.get(`SELECT * FROM timers WHERE id = ?`, [id], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
     if (!row) {
-      return res.status(404).json({ error: 'Counter not found' });
+      return res.status(404).json({ error: 'Timer not found' });
     }
 
-    db.run(`UPDATE counters SET count = count + 1 WHERE id = ?`, [id], function(err) {
+    const endTime = Date.now() + row.duration;
+
+    db.run(`UPDATE timers SET endTime = ? WHERE id = ?`, [endTime, id], function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -54,36 +48,39 @@ app.post('/increment/:id', (req, res) => {
       res.json({
         id: id,
         name: row.name,
-        count: row.count + 1
+        endTime: endTime
       });
     });
   });
 });
 
-// Ruta para reiniciar el contador por ID
-app.post('/reset/:id', (req, res) => {
+// Ruta para obtener el estado del temporizador
+app.get('/get-timer/:id', (req, res) => {
   const { id } = req.params;
 
-  db.get(`SELECT * FROM counters WHERE id = ?`, [id], (err, row) => {
+  db.get(`SELECT endTime FROM timers WHERE id = ?`, [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: 'Timer not found' });
+    }
+
+    res.json(row);
+  });
+});
+
+// Ruta para detener el temporizador
+app.post('/stop-timer/:id', (req, res) => {
+  const { id } = req.params;
+
+  db.run(`UPDATE timers SET endTime = NULL WHERE id = ?`, [id], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    if (!row) {
-      return res.status(404).json({ error: 'Counter not found' });
-    }
-
-    db.run(`UPDATE counters SET count = 0 WHERE id = ?`, [id], function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      res.json({
-        id: id,
-        name: row.name,
-        count: 0
-      });
-    });
+    res.json({ id });
   });
 });
 
